@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mina de Cripto</title>
+<link href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
+<style>
+:root{--bg:#14171c;--panel:#1f242c;--line:#39414d;--text:#e8edf3;--muted:#98a3b3;--coin:#2fd0ff;--gold:#ffc83d;--ok:#5fd68a}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--text);font-family:'Pixelify Sans',system-ui,sans-serif;padding:12px 12px 28px;max-width:480px;margin:0 auto;-webkit-tap-highlight-color:transparent}
+header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+h1{font-size:20px}
+#wallet button{font-family:inherit}
+.stats{background:var(--panel);border:2px solid var(--line);padding:10px 12px;margin-bottom:10px}
+.stats .big{font-size:30px;color:var(--gold);font-weight:700}
+.bar{height:10px;background:#0c0e12;border:2px solid var(--line);margin-top:6px}
+.bar i{display:block;height:100%;background:var(--coin);width:0}
+.small{font-size:14px;color:var(--muted);margin-top:4px}
+#mine{display:block;width:210px;height:210px;margin:14px auto;border:0;cursor:pointer;touch-action:manipulation;background:
+ linear-gradient(45deg,#3a3f47 25%,#2d3138 25% 50%,#3a3f47 50% 75%,#2d3138 75%) 0 0/42px 42px;
+ box-shadow:inset 0 0 0 6px #23272e,0 6px 0 #0c0e12;position:relative}
+#mine:active{transform:translateY(4px);box-shadow:inset 0 0 0 6px #23272e,0 2px 0 #0c0e12}
+#mine span{position:absolute;inset:55px;background:var(--coin);color:#06323f;font:700 54px/100px 'Pixelify Sans',sans-serif;box-shadow:0 0 28px var(--coin)}
+.pop{position:fixed;color:var(--gold);font-weight:700;pointer-events:none;animation:up .7s forwards}
+@keyframes up{to{transform:translateY(-60px);opacity:0}}
+@media (prefers-reduced-motion:reduce){.pop{animation:none;opacity:0}}
+h2{font-size:18px;margin:16px 0 8px}
+.tool{display:flex;justify-content:space-between;align-items:center;gap:8px;background:var(--panel);border:2px solid var(--line);padding:10px;margin-bottom:8px}
+.tool.on{border-color:var(--coin)}
+.tool b{font-size:17px}
+.tool button{font-family:inherit;font-size:15px;padding:8px 10px;border:2px solid var(--line);background:#2a313b;color:var(--text);min-width:104px;cursor:pointer}
+.tool button.buy{background:var(--coin);color:#06323f;border-color:var(--coin);font-weight:700}
+.tool button:disabled{opacity:.5}
+#msg{min-height:20px;color:var(--ok);font-size:15px;margin-top:6px}
+.sel{display:flex;gap:8px;margin-bottom:10px}
+.sel button{flex:1;font-family:inherit;font-size:15px;background:var(--panel);color:var(--text);border:2px solid var(--line);padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+.sel button.on{border-color:var(--c);box-shadow:inset 0 0 0 2px var(--c)}
+.sel small{color:var(--muted);font-size:13px}
+button:focus-visible{outline:3px solid var(--gold)}
+</style>
+</head>
+<body>
+<header><h1>Mina de Cripto</h1><div id="wallet"></div></header>
+
+<div class="stats">
+  <div class="small">Minando: <b id="cur"></b></div>
+  <div class="big" id="coins">0</div>
+  <div class="small" id="rate"></div>
+  <div class="bar"><i id="bar"></i></div>
+  <div class="small" id="lvl"></div>
+</div>
+
+<div class="sel" id="sel"></div>
+<button id="mine" aria-label="Minar"><span id="mineSym">₿</span></button>
+<div class="small" style="text-align:center">Los puntos de BTC, USDT y DOGE son del juego, no son cripto real.</div>
+<div id="msg" role="status"></div>
+
+<h2>Palas</h2>
+<div id="shop"></div>
+
+<script>
+// ====== CONFIGURA AQUÍ ======
+const WALLET = "UQDNo7dQtQDU3u82FQOGZrkGySp-BZrxxAkeqCrS7LzHnox8";
+const TOOLS = [
+  {id:"madera", name:"Pala de madera", price:0,   tap:1,  hour:10},
+  {id:"piedra", name:"Pala de piedra", price:0.5, tap:3,  hour:30},
+  {id:"hierro", name:"Pala de hierro", price:1,   tap:7,  hour:70},
+  {id:"oro",    name:"Pala de oro",    price:2,   tap:15, hour:150},
+  {id:"diamante",name:"Pala de diamante",price:5, tap:40, hour:400}
+];
+// ============================
+const tg = window.Telegram && Telegram.WebApp; if(tg){tg.ready();tg.expand();}
+const KEY="mina_v1";
+const CRYPTOS=[{id:"BTC",sym:"₿",color:"#f7931a"},{id:"USDT",sym:"₮",color:"#26a17b"},{id:"DOGE",sym:"Ð",color:"#d8b73a"}];
+let S = {bal:{BTC:0,USDT:0,DOGE:0}, mining:"BTC", owned:["madera"], equipped:"madera", last:Date.now()};
+try{ const x=JSON.parse(localStorage.getItem(KEY));
+  if(x){ if(!x.bal){ x.bal={BTC:x.coins||0,USDT:0,DOGE:0}; delete x.coins; } S=Object.assign(S,x); }
+}catch(e){}
+CRYPTOS.forEach(c=>{ if(typeof S.bal[c.id]!=="number") S.bal[c.id]=0; });
+if(!CRYPTOS.some(c=>c.id===S.mining)) S.mining="BTC";
+const cur=()=>CRYPTOS.find(c=>c.id===S.mining);
+const $=id=>document.getElementById(id);
+const tool=()=>TOOLS.find(t=>t.id===S.equipped);
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+
+// minería pasiva (también mientras la app estuvo cerrada, máx. 8 h)
+function accrue(){
+  const now=Date.now(), s=Math.max(0,Math.min((now-S.last)/1000, 8*3600));
+  S.bal[S.mining] += tool().hour/3600*s; S.last=now;
+}
+function renderSel(){
+  $("sel").innerHTML=CRYPTOS.map(c=>`<button data-c="${c.id}" class="${S.mining===c.id?'on':''}" style="--c:${c.color}"><span>${c.sym} ${c.id}</span><small id="b-${c.id}"></small></button>`).join("");
+  document.documentElement.style.setProperty("--coin",cur().color);
+  $("mineSym").textContent=cur().sym;
+  $("cur").textContent=cur().id;
+}
+function renderStats(){
+  const total=Math.floor(CRYPTOS.reduce((a,c)=>a+S.bal[c.id],0)), lvl=Math.floor(total/500)+1, p=(total%500)/500*100;
+  $("coins").textContent=S.bal[S.mining].toLocaleString("es",{minimumFractionDigits:3,maximumFractionDigits:3});
+  CRYPTOS.forEach(c=>{ const el=$("b-"+c.id); if(el) el.textContent=S.bal[c.id].toFixed(2); });
+  $("rate").textContent="+"+(tool().hour/3600).toFixed(4)+" por segundo · "+tool().hour+" por hora";
+  $("lvl").textContent="Nivel "+lvl+" · "+Math.round(p)+"%";
+  $("bar").style.width=p+"%";
+}
+function renderShop(){
+  $("shop").innerHTML=TOOLS.map(t=>{
+    const own=S.owned.includes(t.id), on=S.equipped===t.id;
+    const btn = on ? '<button disabled>En uso</button>'
+      : own ? `<button data-eq="${t.id}">Usar</button>`
+      : `<button class="buy" data-buy="${t.id}">${t.price} TON</button>`;
+    return `<div class="tool ${on?'on':''}"><div><b>${t.name}</b><div class="small">${t.tap} por toque · ${t.hour} por hora</div></div>${btn}</div>`;
+  }).join("");
+}
+function render(){ renderShop(); renderSel(); renderStats(); }
+$("mine").addEventListener("click",e=>{
+  accrue(); S.bal[S.mining]+=tool().tap; save(); renderStats();
+  const p=document.createElement("div"); p.className="pop"; p.textContent="+"+tool().tap;
+  p.style.left=(e.clientX-8)+"px"; p.style.top=(e.clientY-20)+"px";
+  document.body.appendChild(p); setTimeout(()=>p.remove(),700);
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+});
+
+// TON Connect
+const ui = new TON_CONNECT_UI.TonConnectUI({
+  manifestUrl: new URL("tonconnect-manifest.json", location.href).href,
+  buttonRootId: "wallet"
+});
+function say(t){$("msg").textContent=t}
+
+$("shop").addEventListener("click", async e=>{
+  const eq=e.target.dataset.eq, buy=e.target.dataset.buy;
+  if(eq){ accrue(); S.equipped=eq; save(); render(); return; }
+  if(!buy) return;
+  const t=TOOLS.find(x=>x.id===buy);
+  if(!ui.connected){ say("Conecta tu billetera Tonkeeper primero."); ui.openModal(); return; }
+  try{
+    await ui.sendTransaction({
+      validUntil: Math.floor(Date.now()/1000)+300,
+      messages:[{address:WALLET, amount:String(Math.round(t.price*1e9))}]
+    });
+    accrue(); S.owned.push(t.id); S.equipped=t.id; save(); render();
+    say("Compraste la "+t.name.toLowerCase()+".");
+  }catch(err){ say("No se completó el pago. No se cobró nada."); }
+});
+
+$("sel").addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b) return;
+  accrue(); S.mining=b.dataset.c; save(); renderSel(); renderStats();
+});
+accrue(); render();
+let n=0; setInterval(()=>{accrue();renderStats();if(++n%4===0)save();},250);
+</script>
+</body>
+</html>
