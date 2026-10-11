@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mina de Cripto</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tonconnect/ui@2.0.9/dist/tonconnect-ui.min.js"></script>
+<style>
+:root{--bg:#050b17;--card:#0b1a2e;--line:#12395a;--cyan:#19d3ff;--green:#19e6a1;--gold:#ffc83d;--text:#e9f4ff;--muted:#7f9bb8}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{background:radial-gradient(circle at 50% 28%,#0c2f55 0,#071428 45%,var(--bg) 80%) fixed;color:var(--text);font:500 17px/1.3 'Rajdhani',system-ui,sans-serif;max-width:480px;margin:0 auto;padding:calc(10px + env(safe-area-inset-top)) 14px calc(100px + env(safe-area-inset-bottom));-webkit-tap-highlight-color:transparent}
+header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.av{width:44px;height:44px;border-radius:50%;border:2px solid var(--gold);display:grid;place-items:center;color:var(--gold);font:700 16px 'Orbitron',sans-serif;flex:none;background:#0a1626}
+.who{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.who b{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pill{align-self:flex-start;font-size:13px;font-weight:700;color:#06323f;background:var(--green);padding:0 8px;border-radius:10px}
+#wallet button{font-family:inherit}
+.tab{display:none}.tab.on{display:block}
+h2{font-size:20px;margin:16px 0 8px;color:var(--cyan)}
+.small{font-size:14px;color:var(--muted)}
+.chips{display:flex;gap:8px;margin-bottom:10px}
+.chip{flex:1;font:inherit;color:var(--text);background:var(--card);border:2px solid var(--line);border-radius:14px;padding:6px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;line-height:1.15}
+.chip b{font-size:16px}.chip span{font-size:13px;color:var(--muted)}
+.chip.on{border-color:var(--cyan);box-shadow:0 0 14px #19d3ff55;background:#0b2744}
+.chip.on span{color:var(--green)}
+.lbl{text-align:center;color:var(--cyan);font-size:15px;margin-top:6px;letter-spacing:.5px}
+.total{text-align:center;display:flex;justify-content:center;align-items:baseline;gap:8px}
+.total b{font:700 38px 'Orbitron',sans-serif;text-shadow:0 0 16px #19d3ff88}
+.total em{font-style:normal;font-weight:700;font-size:22px;color:var(--cyan)}
+.rate{display:block;width:max-content;margin:6px auto;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:2px 14px;color:var(--green);font-weight:700}
+.prog{height:10px;background:#04101e;border:1px solid var(--line);border-radius:6px;margin:10px 6px 2px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--green));box-shadow:0 0 10px var(--cyan)}
+#lvl{text-align:center}
+#mine{display:block;width:230px;height:230px;margin:18px auto 12px;border-radius:50%;border:0;cursor:pointer;touch-action:manipulation;position:relative;
+ background:radial-gradient(circle at 50% 40%,#12537f 0,#0a2b4c 60%,#071a31 100%);
+ box-shadow:0 0 0 8px #0b2e50,0 0 0 11px var(--cyan),0 0 50px 8px #19d3ff77,inset 0 0 40px #19d3ff44;transition:transform .08s}
+#mine:active{transform:scale(.95)}
+#mine::after{content:"";position:absolute;inset:26px;border-radius:50%;border:2px dashed #19d3ff66}
+#mine span{position:relative;z-index:1;font:700 54px 'Orbitron',sans-serif;color:#d9f6ff;text-shadow:0 0 22px var(--cyan)}
+.hint{text-align:center}
+.pop{position:fixed;color:var(--gold);font:700 20px 'Orbitron',sans-serif;pointer-events:none;animation:up .7s forwards;text-shadow:0 0 8px #000}
+@keyframes up{to{transform:translateY(-70px);opacity:0}}
+.card{display:flex;align-items:center;gap:10px;background:linear-gradient(135deg,#0d2340,#0a1a2e);border:1px solid var(--line);border-radius:16px;padding:10px 12px;margin-bottom:8px}
+.card.on{border-color:var(--cyan);box-shadow:0 0 14px #19d3ff33}
+.card.lock{opacity:.65}
+.card .ic{font-size:26px;width:36px;text-align:center}
+.grow{flex:1;min-width:0}.grow b{font-size:18px}
+.tag{font-size:14px;font-weight:700;color:var(--gold)}
+.card button,.btn{font:700 16px 'Rajdhani',sans-serif;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:#12304f;color:var(--text);min-width:96px;cursor:pointer}
+.card button.buy,.btn.go{background:linear-gradient(90deg,var(--cyan),var(--green));color:#05283a;border:0}
+.card button:disabled{opacity:.5}
+.btn{display:block;width:100%;margin-top:8px;padding:12px;font-size:18px}
+.kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv b{color:var(--cyan)}
+#msg{position:fixed;left:14px;right:14px;bottom:calc(92px + env(safe-area-inset-bottom));max-width:452px;margin:auto;text-align:center;background:#0b2744;border:1px solid var(--green);color:var(--green);border-radius:12px;padding:8px;display:none;z-index:5}
+nav{position:fixed;left:0;right:0;bottom:0;max-width:480px;margin:auto;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(5,11,23,.94);border-top:1px solid var(--line);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:4}
+nav button{font:700 14px 'Rajdhani',sans-serif;background:none;border:0;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:4px 0}
+nav button i{font-style:normal;font-size:24px;filter:grayscale(1) opacity(.7)}
+nav button.on{color:var(--cyan)}nav button.on i{filter:none}
+nav button.mid i{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;margin-top:-26px;background:#0b2744;border:2px solid var(--cyan);box-shadow:0 0 18px #19d3ffaa;filter:none}
+button:focus-visible{outline:3px solid var(--gold)}
+@media (prefers-reduced-motion:reduce){.pop{animation:none;opacity:0}#mine{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="av" id="av">?</div>
+  <div class="who"><b id="uname">Minero</b><span class="pill" id="ulvl">Nivel 1</span></div>
+  <div id="wallet"></div>
+</header>
+
+<section id="t-mine" class="tab on">
+  <div class="chips" id="chips" style="display:none"></div>
+  <div class="lbl" id="lblm">SVA pendiente</div>
+  <div class="total"><b id="bal">0</b><em>SVA</em></div>
+  <span class="rate">+<span id="rate">0</span> por hora</span>
+  <div class="prog"><i id="bar"></i></div>
+  <div class="small" id="lvl"></div>
+  <button id="mine" aria-label="Minar"><span id="coinSym">₿</span></button>
+  <div class="small hint">Cada toque: <b id="tapv"></b> · <span id="toolname"></span></div>
+</section>
+<section id="t-tasks" class="tab"></section>
+<section id="t-miners" class="tab"></section>
+<section id="t-friends" class="tab"></section>
+<section id="t-profile" class="tab"></section>
+<div id="msg" role="status"></div>
+
+<nav>
+  <button data-tab="mine" class="on"><i>⛏️</i>Mine</button>
+  <button data-tab="tasks"><i>📋</i>Tasks</button>
+  <button data-tab="miners" class="mid"><i>⚡</i>Miners</button>
+  <button data-tab="friends"><i>👥</i>Friends</button>
+  <button data-tab="profile"><i>👤</i>Profile</button>
+</nav>
+
+<script>
+// ====== CONFIGURA AQUÍ ======
+const WALLET = "UQDNo7dQtQDU3u82FQOGZrkGySp-BZrxxAkeqCrS7LzHnox8";
+const BOT_LINK = "https://t.me/MinaCripto2026_Bot";
+const TOOLS = [
+  {id:"madera", name:"Pala de madera", price:0,   tap:1,  hour:10},
+  {id:"piedra", name:"Pala de piedra", price:0.5, tap:3,  hour:30},
+  {id:"hierro", name:"Pala de hierro", price:1,   tap:7,  hour:70},
+  {id:"oro",    name:"Pala de oro",    price:2,   tap:15, hour:150},
+  {id:"diamante",name:"Pala de diamante",price:5, tap:40, hour:400}
+];
+// Mineros: se desbloquean solos al llegar al nivel indicado y minan por hora
+const MINERS = [
+  {id:"aprendiz", name:"Minero aprendiz", lvl:2,  hour:8},
+  {id:"obrero",   name:"Minero obrero",   lvl:4,  hour:25},
+  {id:"capataz",  name:"Capataz",         lvl:6,  hour:60},
+  {id:"ingeniero",name:"Ingeniero",       lvl:9,  hour:130},
+  {id:"robot",    name:"Robot minero",    lvl:12, hour:300}
+];
+const CRYPTOS = {SVA:"SVA"};
+const TASKS = [
+  {id:"daily", name:"Bono diario", desc:"Vuelve cada 24 horas", reward:200},
+  {id:"taps",  name:"Toca la moneda 100 veces", desc:"", reward:300},
+  {id:"miner", name:"Desbloquea tu primer minero", desc:"Sube al nivel 2", reward:500}
+];
+// ============================
+const tg = window.Telegram && Telegram.WebApp; if(tg){tg.ready();tg.expand();}
+const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+const KEY="mina_v1";
+let S = {bal:{SVA:0}, sel:"SVA", total:0, owned:["madera"], equipped:"madera", miners:[], tasks:{}, taps:0, last:Date.now()};
+try{
+  const x=JSON.parse(localStorage.getItem(KEY));
+  if(x){
+    if(typeof x.coins==="number" && !x.bal){ x.bal={SVA:x.coins}; x.total=x.coins; delete x.coins; }
+    S=Object.assign(S,x);
+    S.bal={SVA:(S.bal.SVA||0)+(S.bal.BTC||0)+(S.bal.USDT||0)+(S.bal.DOGE||0)}; S.sel="SVA";
+  }
+}catch(e){}
+const $=id=>document.getElementById(id);
+const tool=()=>TOOLS.find(t=>t.id===S.equipped);
+const lv=()=>Math.floor(S.total/500)+1;
+const rate=()=>tool().hour+MINERS.filter(m=>S.miners.includes(m.id)).reduce((a,m)=>a+m.hour,0);
+const fmt=n=>n.toLocaleString("es",{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let cur="mine", toastT;
+function say(t){const m=$("msg");m.textContent=t;m.style.display="block";clearTimeout(toastT);toastT=setTimeout(()=>m.style.display="none",3500)}
+function add(n){S.bal[S.sel]+=n;S.total+=n}
+
+// minería pasiva (también con la app cerrada, máx. 8 h)
+function accrue(){
+  const now=Date.now(), s=Math.min((now-S.last)/1000,8*3600);
+  add(rate()/3600*s); S.last=now;
+}
+function unlock(){
+  MINERS.forEach(m=>{
+    if(lv()>=m.lvl && !S.miners.includes(m.id)){
+      S.miners.push(m.id); say("¡Minero desbloqueado: "+m.name+"!");
+      if(cur==="miners") drawMiners();
+    }
+  });
+}
+
+// ----- pantalla Mine -----
+function drawChips(){
+  $("chips").innerHTML=Object.keys(CRYPTOS).map(k=>`<button class="chip ${S.sel===k?'on':''}" data-sel="${k}"><b>${CRYPTOS[k]} ${k}</b><span data-b="${k}">${fmt(S.bal[k])}</span></button>`).join("");
+  $("lblm").textContent="SVA pendiente"; $("coinSym").textContent=CRYPTOS[S.sel];
+}
+function paint(){
+  const l=lv(), p=(S.total%500)/500*100;
+  $("ulvl").textContent="Nivel "+l;
+  if(cur!=="mine") return;
+  $("bal").textContent=fmt(S.bal[S.sel]);
+  Object.keys(CRYPTOS).forEach(k=>{const e=document.querySelector('[data-b="'+k+'"]'); if(e) e.textContent=fmt(S.bal[k])});
+  $("rate").textContent=rate();
+  $("lvl").textContent="Nivel "+l+" · "+Math.round(p)+"%";
+  $("bar").style.width=p+"%";
+  $("tapv").textContent="+"+tool().tap;
+  $("toolname").textContent=tool().name;
+}
+
+// ----- Miners -----
+function drawMiners(){
+  $("t-miners").innerHTML='<h2>Mineros</h2><div class="small">Se desbloquean al subir de nivel y minan solos.</div><div style="height:8px"></div>'
+  +MINERS.map(m=>{const on=S.miners.includes(m.id);
+    return `<div class="card ${on?'on':'lock'}"><div class="ic">${on?'🤖':'🔒'}</div><div class="grow"><b>${m.name}</b><div class="small">+${m.hour} por hora</div></div><span class="tag">${on?'Activo':'Nivel '+m.lvl}</span></div>`}).join("")
+  +'<h2>Palas</h2>'
+  +TOOLS.map(t=>{
+    const own=S.owned.includes(t.id), on=S.equipped===t.id;
+    const btn=on?'<button disabled>En uso</button>':own?`<button data-eq="${t.id}">Usar</button>`:`<button class="buy" data-buy="${t.id}">${t.price} TON</button>`;
+    return `<div class="card ${on?'on':''}"><div class="ic">⛏️</div><div class="grow"><b>${t.name}</b><div class="small">${t.tap} por toque · ${t.hour} por hora</div></div>${btn}</div>`;
+  }).join("");
+}
+
+// ----- Tasks -----
+function taskState(t){
+  if(t.id==="daily"){const d=S.tasks.daily; return (!d||Date.now()-d>864e5)?"ready":"done";}
+  if(S.tasks[t.id]) return "done";
+  if(t.id==="taps") return S.taps>=100?"ready":"wait";
+  if(t.id==="miner") return S.miners.length>0?"ready":"wait";
+}
+function drawTasks(){
+  $("t-tasks").innerHTML='<h2>Tareas</h2>'+TASKS.map(t=>{
+    const st=taskState(t);
+    const desc=t.id==="taps"?Math.min(S.taps,100)+"/100 toques":t.desc;
+    const btn=st==="ready"?`<button class="buy" data-claim="${t.id}">Reclamar</button>`:`<button disabled>${st==="done"?"Hecho":"Pendiente"}</button>`;
+    return `<div class="card ${st==='ready'?'on':''}"><div class="ic">📋</div><div class="grow"><b>${t.name}</b><div class="small">${desc} · +${t.reward} SVA</div></div>${btn}</div>`;
+  }).join("")+adCard();
+}
+
+// ----- Anuncio (solo cuando el jugador toca el botón) -----
+const AD_VAST="https://funny-tooth.com/dgmCF/z.dnGgNrvEZZGWUK/eeMmT9uuzZnU/lXkvPfT/c/0/M/jFYG2kNCjpU/twNkzlQ/y/N-j/YT2/ObQJ";
+const AD_REWARD=50, AD_WAIT=3600e3;
+let adBusy=false;
+function adCard(){
+  const left=Math.max(0,AD_WAIT-(Date.now()-(S.tasks.adT||0)));
+  const btn=left>0?`<button disabled>${Math.ceil(left/60000)} min</button>`:'<button class="buy" data-ad="1">Ver</button>';
+  return `<div class="card"><div class="ic">🎬</div><div class="grow"><b>Ver un anuncio</b><div class="small">+${AD_REWARD} SVA · una vez por hora</div></div>${btn}</div>`;
+}
+async function watchAd(){
+  if(adBusy||Date.now()-(S.tasks.adT||0)<AD_WAIT) return;
+  adBusy=true;
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center";
+  const v=document.createElement("video"); v.style.cssText="max-width:100%;max-height:100%"; v.autoplay=true; v.playsInline=true;
+  const x=document.createElement("button"); x.textContent="✕"; x.setAttribute("aria-label","Cerrar");
+  x.style.cssText="position:absolute;top:calc(12px + env(safe-area-inset-top));right:12px;font-size:22px;color:#fff;background:#0008;border:0;border-radius:50%;width:40px;height:40px;cursor:pointer";
+  const close=()=>{ov.remove();adBusy=false};
+  x.onclick=close; ov.append(v,x); document.body.appendChild(ov);
+  try{
+    const r=await fetch(AD_VAST);
+    const xml=new DOMParser().parseFromString(await r.text(),"text/xml");
+    const m=xml.querySelector("MediaFile"); if(!m) throw new Error("sin video");
+    v.src=m.textContent.trim();
+    v.onended=()=>{close(); add(AD_REWARD); S.tasks.adT=Date.now(); save(); drawTasks(); say("Ganaste +"+AD_REWARD+" SVA");};
+    v.onerror=()=>{close(); say("No se pudo cargar el anuncio.")};
+  }catch(e){ close(); say("No se pudo cargar el anuncio, intenta más tarde."); }
+}
+
+// ----- Friends -----
+const refLink=()=>BOT_LINK+(user&&user.id?"?startapp=ref_"+user.id:"");
+function drawFriends(){
+  $("t-friends").innerHTML='<h2>Amigos</h2><div class="card"><div class="ic">👥</div><div class="grow"><b>Invita a tus amigos</b><div class="small">Comparte tu enlace para que minen contigo. El bono por cada amigo se activará pronto.</div></div></div>'
+  +'<button class="btn go" data-share="1">Invitar por Telegram</button><button class="btn" data-copy="1">Copiar mi enlace</button>';
+}
+
+// ----- Profile -----
+function drawProfile(){
+  $("t-profile").innerHTML='<h2>Perfil</h2><div class="card">'
+  +'<div class="grow">'
+  +`<div class="kv"><span>Nombre</span><b>${esc(user?(user.first_name||"Minero"):"Minero")}</b></div>`
+  +`<div class="kv"><span>ID</span><b>${user?user.id:"-"}</b></div>`
+  +`<div class="kv"><span>Nivel</span><b>${lv()}</b></div>`
+  +`<div class="kv"><span>Total minado</span><b>${fmt(S.total)}</b></div>`
+  +`<div class="kv"><span>Pala en uso</span><b>${tool().name}</b></div>`
+  +`<div class="kv"><span>Mineros activos</span><b>${S.miners.length}/${MINERS.length}</b></div>`
+  +`<div class="kv"><span>Billetera</span><b>${ui&&ui.connected?"Conectada":"Sin conectar"}</b></div>`
+  +'</div></div>';
+}
+
+const draw={tasks:drawTasks,miners:drawMiners,friends:drawFriends,profile:drawProfile};
+function go(tab){
+  cur=tab;
+  document.querySelectorAll(".tab").forEach(e=>e.classList.toggle("on",e.id==="t-"+tab));
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.tab===tab));
+  if(draw[tab]) draw[tab](); else paint();
+}
+document.querySelector("nav").addEventListener("click",e=>{const b=e.target.closest("button"); if(b) go(b.dataset.tab)});
+
+// toque para minar
+$("mine").addEventListener("click",e=>{
+  accrue(); add(tool().tap); S.taps++; unlock(); save(); paint();
+  const p=document.createElement("div"); p.className="pop"; p.textContent="+"+tool().tap;
+  p.style.left=(e.clientX-8)+"px"; p.style.top=(e.clientY-30)+"px";
+  document.body.appendChild(p); setTimeout(()=>p.remove(),700);
+  if(tg&&tg.HapticFeedback) tg.HapticFeedback.impactOccurred("light");
+});
+$("chips").addEventListener("click",e=>{
+  const b=e.target.closest("[data-sel]"); if(!b) return;
+  accrue(); S.sel=b.dataset.sel; save(); drawChips(); paint();
+});
+
+// TON Connect
+let ui = null;
+try{
+  ui = new TON_CONNECT_UI.TonConnectUI({
+    manifestUrl: new URL("tonconnect-manifest.json", location.href).href,
+    buttonRootId: "wallet"
+  });
+}catch(e){ ui = null; }
+
+document.body.addEventListener("click", async e=>{
+  const d=e.target.closest("button"); if(!d) return;
+  const eq=d.dataset.eq, buy=d.dataset.buy, claim=d.dataset.claim;
+  if(eq){ accrue(); S.equipped=eq; save(); drawMiners(); return; }
+  if(claim){
+    const t=TASKS.find(x=>x.id===claim); if(taskState(t)!=="ready") return;
+    add(t.reward); S.tasks[claim]=Date.now(); unlock(); save(); drawTasks(); say("Ganaste +"+t.reward+" SVA"); return;
+  }
+  if(d.dataset.ad){ watchAd(); return; }
+  if(d.dataset.share){
+    const url=refLink(), txt="Mina cripto conmigo";
+    if(tg&&tg.openTelegramLink) tg.openTelegramLink("https://t.me/share/url?url="+encodeURIComponent(url)+"&text="+encodeURIComponent(txt));
+    else if(navigator.share) navigator.share({title:txt,url}).catch(()=>{});
+    return;
+  }
+  if(d.dataset.copy){
+    try{ await navigator.clipboard.writeText(refLink()); say("Enlace copiado."); }catch(err){ say(refLink()); }
+    return;
+  }
+  if(!buy) return;
+  const t=TOOLS.find(x=>x.id===buy);
+  if(!ui){ say("Abre el juego desde Telegram para comprar."); return; }
+  if(!ui.connected){ say("Conecta tu billetera Tonkeeper primero."); ui.openModal(); return; }
+  try{
+    await ui.sendTransaction({
+      validUntil: Math.floor(Date.now()/1000)+300,
+      messages:[{address:WALLET, amount:String(Math.round(t.price*1e9))}]
+    });
+    accrue(); S.owned.push(t.id); S.equipped=t.id; save(); drawMiners();
+    say("Compraste la "+t.name.toLowerCase()+".");
+  }catch(err){ say("No se completó el pago. No se cobró nada."); }
+});
+
+// arranque
+if(user){ $("uname").textContent=user.first_name||"Minero"; $("av").textContent=(user.first_name||"?").slice(0,2).toUpperCase(); }
+accrue(); unlock(); drawChips(); paint();
+setInterval(()=>{accrue();unlock();save();paint()},1000);
+</script>
+</body>
+</html>
